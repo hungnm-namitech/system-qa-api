@@ -1,0 +1,15 @@
+.env
+.env.*
+node_modules
+dist
+.git
+.idea
+.DS_Store
+.docker
+.eslintrc.js
+.gitignore
+.gitlab-ci.yml
+.prettierrc
+Makefile
+docker-compose.yml
+README.md

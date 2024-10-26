@@ -1,0 +1,8 @@
+export enum ManualAction {
+  OPEN_URL = 'OPEN_URL',
+  INPUT = 'INPUT',
+  CLICK = 'CLICK',
+  DOUBLE_CLICK = 'DOUBLE_CLICK',
+  CHANGE_TAB = 'CHANGE_TAB',
+  INITIAL_TAB = 'INITIAL_TAB',
+}

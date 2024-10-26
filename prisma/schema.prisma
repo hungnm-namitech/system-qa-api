@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  users       UserOrganization[]
+  invitations Invitation[]
+  manuals     Manual[]
+
+  @@map("organizations")
+}
+
+enum UserGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVATED
+  DEACTIVATED
+}
+
+enum UserRole {
+  MEMBER
+  ADMIN
+}
+
+model User {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String
+  email     String      @unique
+  password  String
+  gender    UserGender?
+  birthday  DateTime?   @db.Date
+  address   String?
+  status    UserStatus  @default(PENDING)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  organizations UserOrganization[]
+  manuals       Manual[]
+
+  @@map("users")
+}
+
+model UserOrganization {
+  id             Int      @id @default(autoincrement())
+  userId         String   @map("user_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  role           UserRole @default(MEMBER)
+  joinedAt       DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, organizationId])
+  @@map("organization_user")
+}
+
+model EmailWhitelist {
+  email String @id @unique
+
+  @@map("email_whitelist")
+}
+
+model PasswordReset {
+  email     String   @id @unique
+  token     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("password_reset")
+}
+
+model Registration {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("registrations")
+}
+
+model Invitation {
+  id             Int      @id @default(autoincrement())
+  email          String
+  token          String
+  organizationId String   @map("organization_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique(fields: [email, organizationId], name: "emailAndOrganizationId")
+  @@map("invitations")
+}
+
+enum VisibilityStatus {
+  PUBLIC
+  PRIVATE
+}
+
+enum ProcessingStatus {
+  WAITING
+  QUEUED
+  PROCESSING
+  SUCCESS
+  FAIL
+}
+
+model Manual {
+  id               String           @id @default(uuid()) @db.Uuid
+  organizationId   String           @map("organization_id") @db.Uuid
+  authorId         String           @map("author_id") @db.Uuid
+  title            String
+  visibilityStatus VisibilityStatus @default(PRIVATE) @map("visibility_status")
+  processingStatus ProcessingStatus @default(WAITING) @map("processing_status")
+  videoPath        String?          @map("video_path")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz()
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  manualSteps  ManualStep[]
+
+  @@map("manuals")
+}
+
+model ManualStep {
+  id          String   @id @default(uuid()) @db.Uuid
+  manualId    String   @map("manual_id") @db.Uuid
+  stepOrder   Int      @default(0) @map("step_order")
+  description String?
+  instruction String?  @db.Text
+  imagePath   String?  @map("image_path")
+  metadata    String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  manual Manual @relation(fields: [manualId], references: [id], onDelete: Cascade)
+
+  @@unique(fields: [id, manualId], name: "manualStepIdWithManualId")
+  @@map("manual_steps")
+}

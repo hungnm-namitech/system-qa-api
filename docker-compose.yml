@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  postgresdb:
+    image: postgres:15.7
+    restart: unless-stopped
+    ports:
+      - "${DOCKER_EXPOSE_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - "postgres_db_data:/var/lib/postgresql/data/pgdata"
+    environment:
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "${DOCKER_EXPOSE_ADMINER_PORT:-8080}:8080"
+    environment: []
+  mailpit:
+    image: axllent/mailpit:v1.8
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      TZ: Asia/Tokyo
+      MP_SMTP_AUTH_ACCEPT_ANY: true
+      MP_SMTP_AUTH_ALLOW_INSECURE: true
+      MP_VERBOSE: true
+    volumes:
+      - mailpit_data:/data
+volumes:
+  postgres_db_data:
+  mailpit_data:
+
